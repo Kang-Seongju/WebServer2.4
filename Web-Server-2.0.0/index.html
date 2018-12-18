@@ -1,0 +1,162 @@
+<!DOCTYPE>
+<html>
+<head>
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>kwu-hub Monitoring Service</title>
+  <script src="//d3js.org/d3.v3.min.js"></script>
+  <script type="text/javascript" src="/socket.io-client/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="../client_modules/device_info.js"></script>
+  <link href="main_style.css" rel="stylesheet" type="text/css" media="screen" />
+  <style type="text/css" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></style>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <style>
+    html, body {margin: 0; height: 100%; overflow: hidden}
+  </style>
+</head>
+<body>
+  <script>
+    var tree, svg, rsc, root;
+    var socket;
+    var idx = 1;
+    var host = "128.134.65.120";
+    var aeName = "kwu-hub";
+    
+    function getResource() {
+      socket.emit('getResource');   
+    }
+    window.onload = function() {
+      socket = io.connect('http://' + host);
+      socket.on('connect', function() {
+        getResource();
+      });
+
+      socket.on('update', function(msg) {
+        var cmd = msg.split(":::");
+        switch(cmd[0]){
+          case 'LOG': 
+            var now =  new Date().toString();
+            var args = cmd[1].split("##");
+
+            if(args[0] == 'ERROR'){
+              /* args[1]: error content */
+              errorAlert(now.substring(4,24), args[1],'red');
+            }
+            else{
+              /*
+              * args[0]/args[1]: path
+              * args[2]: value
+              */
+              divAlert(now.substring(4,24), args[0], args[1], args[2],'blue');
+            }
+            
+            
+            break;
+          case 'CREATE':
+            var args = cmd[1].split("##");
+            
+            switch(args[3]){
+              case 'CNT':
+                /*
+                / args[0]: grand parent
+                / args[1]: parent
+                / args[2]: new node name
+                / args[3]: node type
+                */
+                addNode(args[0], args[1], args[2], args[3]);
+                if(args[1] == aeName)
+                  controller(args[2],'green');
+                break;
+              case 'CIN':
+                /*
+                / args[0]: grand parent
+                / args[1]: parent
+                / args[2]: value
+                / args[3]: node type
+                */
+                delNode(args[0], args[1], 'Content');
+                addNode(args[0], args[1], args[2], args[3]);
+
+                // console.log('Create content instance: ' + args[1]);
+                break;
+            }  
+            break;
+          case 'DELETE':
+            var args = cmd[1].split("##");
+            console.log('args[0]: ' + args[0], ' args[1]: ' + args[1], ' args[2]: ' + args[2]);
+
+            if(args[1] == aeName){
+              console.log('Remove [Device_'+args[2]+'] List');
+              document.getElementById('Device_'+args[2]).remove();
+            }
+            delNode(args[0], args[1], args[2]);
+            break;
+        }
+      });
+
+      socket.on('message', function(msg) {
+        var args = msg.split("##");
+        
+        switch(args[3]){
+          case 'CNT':
+            /*
+            / args[0]: grand parent
+            / args[1]: parent
+            / args[2]: new node name
+            / args[3]: node type
+            */
+            addNode(args[0], args[1], args[2], args[3]);
+            if(args[1] == aeName)
+              controller(args[2],'green');
+            break;
+          case 'CIN':
+            /*
+            / args[0]: grand parent
+            / args[1]: parent
+            / args[2]: value
+            / args[3]: node type
+            */
+            delNode(args[0], args[1], 'Content');
+            addNode(args[0], args[1], args[2], args[3]);
+
+            // console.log('Create content instance: ' + args[1]);
+            break;
+        }  
+      });
+    }
+
+  </script>
+   <div id="menu-wrapper">
+    <div id="menu">
+      <ul>
+        <li class="current_page_item"><a href="index.html">Main Page</a></li>
+        <li><a href="./subpage.html">oneM2M Test Page</a></li>
+        <li><a href="./semantic.html">Semantic Page</a></li>
+      </ul>
+    </div>
+  </div>
+  <div id="wrapper">
+    <div id="page">
+      <div id="post">
+        <h1>Resource Monitoring</h1>
+        <div id = "div_log" style="clear: both; overflow:auto;">
+          <script src="../client_modules/resource_tree.js"></script>
+        </div>
+      </div>
+      <div id="sidebarr">
+        <h1>Device Status</h1>
+        <div id = "div_sidebar1" style="clear: both; overflow:auto;" >
+          <script src="../client_modules/status.js"></script>
+        </div>
+        <h1>Event Log</h1>
+        <div id = "div_sidebar2" class ="alertDiv" style="  overflow:auto; scroll-behavior: bottom">
+          <script src="../client_modules/event_log.js"></script>
+        </div>
+      </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE>
+<html>
+<head>
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>kwu-hub Monitoring Service</title>
+  <script src="//d3js.org/d3.v3.min.js"></script>
+  <script type="text/javascript" src="/socket.io-client/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="../client_modules/device_info.js"></script>
+  <link href="semantic.css" rel="stylesheet" type="text/css" media="screen" />
+  <style type="text/css" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></style>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    var socket;
+    var flag = 1;
+    var host = "128.134.65.120";
+    var aeName = "kwu-hub";
+    function MakeRule(){
+        // call sparql query module
+      var device = document.getElementById("subject").value;
+      var service = document.getElementById("object").value;
+      var devicelist = device.split("$");
+      var servicelist = service.split("$");
+      var adddevice = document.getElementById("addsubject").value;
+      var addservice = document.getElementById("addobject").value;
+      var adddevicelist = adddevice.split("$");
+      var addservicelist = addservice.split("$");
+      var action_value = document.getElementById("actionvalue").value
+      var if_value = document.getElementById("ifvalue").value
+      //var condition = document.getElementById("condition").value;
+      var addcondition = document.getElementById("addcondition").value;
+      if(device == "tst" || service == "tst" || adddevice == "tst" || addservice == "tst"){
+        alert("Select & Insert All Section");
+      }
+      else if (if_value == "Input Value" || action_value == "Input Value"){
+        alert("Insert Value");
+      }
+      else if(servicelist[1] == devicelist[1] && adddevicelist[1] == addservicelist[1]){
+     //   var str = "if this ["+adddevicelist[1]+"]'s ["+addservicelist[2]+"] is ["+if_value+"] than ["+addcondition+"] ,that ["+devicelist[1]+"]'s ["+servicelist[2]+"] turn to ["+action_value+"] ["+condition+"]";
+        var str = "if this ["+adddevicelist[1]+"]'s ["+addservicelist[2]+"] is ["+addcondition+"] than ["+if_value+"] ,then ["+devicelist[1]+"]'s ["+servicelist[2]+"] turn to ["+action_value+"]";
+       // console.log(str);
+        socket.emit('updaterule',"ADD&"+str);
+      }
+      else{
+        alert("Select related Section");
+      }
+    }
+    function Makelist(data){
+      console.log(data);
+      $('#subject').empty();
+      $('#object').empty();
+      $('#addsubject').empty();
+      $('#addobject').empty();
+      $('#subject').append('<option value="tst">Select Device</option>');
+      $('#object').append('<option value="tst">Select Service</option>');
+      $('#addsubject').append('<option value="tst">Select Device</option>');
+      $('#addobject').append('<option value="tst">Select Service</option>');
+      $('#actionvalue').append('<option value="tst">Input Value</option>');
+      $('#ifvalue').append('<option value="tst">Input Value</option>');
+      
+      var list = data.split("&");
+      for (var i = 0 ; i < list.length - 1; i ++){
+          var llist = list[i].split("$");
+          var type = llist[0]
+          var subject = llist[1];
+          var sub = subject.split('/');
+          var object = llist[2];
+          var objectlist = object.split(",");
+          $('#subject').append('<option value="$'+subject+'"">'+sub[3]+'</option>');
+          $('#addsubject').append('<option value="add$'+subject+'"">'+sub[3]+'</option>');
+          for(var j = 0 ; j < objectlist.length; j ++){
+            $('#object').append('<option value="$'+subject+'$'+objectlist[j]+'"">'+sub[3]+'/'+objectlist[j]+'</option>');
+            $('#addobject').append('<option value="add$'+subject+'$'+objectlist[j]+'"">'+sub[3]+'/'+objectlist[j]+'</option>');
+          }
+        }
+    }
+    function DeleteRule(s1,s2,s3,s4,s5,s6,s7){
+         var s ="if this ["+s1+"]'s ["+s2+"] is ["+s3+"] than ["+s4+"] ,then ["+s5+"]'s ["+s6+"] turn to ["+s7+"]";
+       //  console.log(s);
+          socket.emit('updaterule',"DELETE&"+s);
+    }
+    function MakeRuleList1(data){
+      var rt = $('#sidebarr1 #div_sidebar');
+      var width = rt.width()/5;
+      rt.empty();
+      var list = data.split("\n");
+      for(var i = 0 ; i < list.length - 1; i++){
+        var r = list[i].split("$");
+        var rr = r[2].split(' ');
+        var tableheader 
+        ='<thead>'
+        +'<tr>'
+        +'<th width = "'+width+'">IF</th>'
+        +'<th width = "'+width+'">'+r[0]+'</th>'
+        +'<th width = "'+width+'">'+r[1]+'</th><th>'+r[2]+'</th>'
+        +'<th width = "'+width+'"><button class ="button" onclick =DeleteRule("'+r[0]+'","'+r[1]+'","'+rr[0]+'","'+rr[1]+'","'+r[3]+'","'+r[4]+'","'+r[5]+'");>Delete</button></th>'
+        +'</tr>'
+        +'</thead>'
+        +'<tbody><tr>'
+        +'<th width = "'+width+'">Then</th>'
+        +'<th width = "'+width+'">'+r[3]+'</th>'
+        +'<th width = "'+width+'">'+r[4]+'</th>'
+        +'<th width = "'+width+'">'+r[5]+'</th>'
+        +'<th width = "'+width+'"></th>'
+        +'</tr></tbody>'
+        var elem = $('<table id = "rule" cellpadding="5" cellspacing="2" width = "100%" class ="type08">').html(tableheader)
+        .prependTo(rt);
+      }
+    }
+    function performancetest(str){
+      var list = str.split('$');
+      var num = parseInt(list[1]);
+      var status ;
+      var top;
+      var bottom;
+      var tmp = list[1];
+      if(list[0] == 'UPDATE_Resource'){
+        top = $('#div_resourceupdate #panel_top');
+        bottom = $('#div_resourceupdate #panel_bottom');
+        num /= 20;
+        num = 31>num ? num : 31;
+      }
+      if(list[0] == 'MATCHING_Rule'){
+        top = $('#div_rulematching #panel_top');
+        bottom = $('#div_rulematching #panel_bottom');
+        num = 31> num ? num : 31;
+      }
+      if(list[0] == 'ADD_Rule' || list[0] =='DELETE_Rule'){
+        top = $('#div_ruleupdate #panel_top');
+        bottom = $('#div_ruleupdate #panel_bottom');
+        num /= 10;
+        num = 31>num ? num : 31;
+      }
+      for(var i = 0 ; i < num ; i += 3){
+        top.empty();
+        bottom.empty();
+        var targetImage = '<img src="./images/'+i+'.png" width="100%" height="100%">'; 
+        var elet = $('<div class="top"/>').html(targetImage)
+        .prependTo(top);
+        var value = '<sj2>'+list[1]+'ms</sj2>';
+        var eleb = $('<div class="bottom"/>').html(value)
+        .prependTo(bottom);
+      }
+    }
+    window.onload = function() {
+      socket = io.connect('http://' + host);
+      socket.on('connect', function() {
+        socket.emit('getSemantic_Resource','ALL');
+      });
+      socket.on('getSemantic',function(data){
+          Makelist(data);
+      })
+      socket.on('getRule1',function(data){
+          MakeRuleList1(data);
+      })
+      socket.on('performance',function(data){
+          console.log(data);
+          performancetest(data);
+      })
+      $(document).keydown(function(event) {
+        if (event.ctrlKey==true && (event.which == '61' || event.which == '107' || event.which == '173' || event.which == '109'  || event.which == '187'  || event.which == '189'  ) ) {
+                event.preventDefault();
+             }
+            // 107 Num Key  +
+            // 109 Num Key  -
+            // 173 Min Key  hyphen/underscor Hey
+            // 61 Plus key  +/= key
+        });
+
+        $(window).bind('mousewheel DOMMouseScroll', function (event) {
+               if (event.ctrlKey == true) {
+               event.preventDefault();
+               }
+        });
+
+      var top1 = $('#div_resourceupdate #panel_top');
+      var bottom1 = $('#div_resourceupdate #panel_bottom');
+      var top2 = $('#div_ruleupdate #panel_top');
+      var bottom2 = $('#div_ruleupdate #panel_bottom');
+      var top3 = $('#div_rulematching #panel_top');
+      var bottom3 = $('#div_rulematching #panel_bottom');
+
+      var targetImage = '<img src="./images/0.png" width="100%" height="100%">'; 
+      var elet = $('<div class="top"/>').html(targetImage)
+      .prependTo(top1);
+      var value = '<sj2>Ready to measure . .</sj2>';
+      var eleb = $('<div class="bottom"/>').html(value)
+      .prependTo(bottom1);
+
+      var targetImage = '<img src="./images/0.png" width="100%" height="100%">'; 
+      var elet = $('<div class="top"/>').html(targetImage)
+      .prependTo(top2);
+      var value = '<sj2>Ready to measure . .</sj2>';
+      var eleb = $('<div class="bottom"/>').html(value)
+      .prependTo(bottom2);
+
+      var targetImage = '<img src="./images/0.png" width="100%" height="100%">'; 
+      var elet = $('<div class="top"/>').html(targetImage)
+      .prependTo(top3);
+      var value = '<sj2>Ready to measure . .</sj2>';
+      var eleb = $('<div class="bottom"/>').html(value)
+      .prependTo(bottom3);
+    }
+
+  </script>
+   <div id="menu-wrapper">
+    <div id="menu">
+      <ul>
+        <li><a href="./index.html">Main Page</a></li>
+        <li><a href="./subpage.html">oneM2M Test Page</a></li>
+        <li class="current_page_item"><a href="semantic.html">Semantic Page</a></li>
+      </ul>
+    </div>
+  </div>
+  <div id="wrapper">
+    <div id="page">
+      <div id="post1">
+        <div id = "title">
+          <sj2> Rule Make </sj1>
+        </div>
+        <div id = "div_log" style="clear: both;">
+          <script type="text/javascript">
+            var alertDiv = $('#div_log');
+            var width = alertDiv.width()/5;
+            var height = alertDiv.height()/3;
+            var tableheader 
+            ='<thead>'
+            +'<tr>'
+            +'<th width ="'+width+'" height = "'+height+'"><button class ="button" id = "button" width = "100%" onclick ="MakeRule(document.getElementById(\'subject\').value, document.getElementById(\'object\').value, document.getElementById(value));">Make</button></th>'
+            +'<th width ="'+width+'" height = "'+height+'">Device</th>'
+            +'<th width ="'+width+'" height = "'+height+'">Service</th>'
+            +'<th width ="'+width+'" height = "'+height+'">Value</th>'
+            +'<th width ="'+width+'" v>Condition</th>'
+            +'</tr>'
+            +'</thead>'
+            +'<tbody>'
+            +'<tr>'
+            +'<th width ="'+width+'" height = "'+height+'">Action</th>'
+            +'<th width ="'+width+'" height = "'+height+'"><select class = "selectBox01" name="subject" id ="subject"style ="background:#F6F0ED;text-align: center;"><option value="tst">Select Device</option></select></th>'
+            +'<th width ="'+width+'" height = "'+height+'"><select class = "selectBox01" name="object" id ="object" width = "100%" style ="background:#F6F0ED;text-align: center;"><option value="tst">Select Service</option></select></th>'
+            +'<th width ="'+width+'" height = "'+height+'"><input class ="d1" type="text" name="s" id="actionvalue" width = "100%" placeholder="Input Value"/></th>'
+            +'<th width ="'+width+'" height = "'+height+'"></th>'
+            +'</tr>'
+            +'<tr>'
+            +'<th width ="'+width+'" height = "'+height+'">IF</th>'
+            +'<th width ="'+width+'" height = "'+height+'"><select class = "selectBox01" name="addsubject" id ="addsubject" width = "100%" style ="background:#F6F0ED;text-align: center;"><option value="tst">Select Device</option></select></th>'
+            +'<th width ="'+width+'" height = "'+height+'"><select class = "selectBox01" name="addobject" id ="addobject" width = "100%" style ="background:#F6F0ED;text-align: center;"><option value="tst">Select Service</option></select></th>'
+            +'<th width ="'+width+'" height = "'+height+'"><input class ="d1" type="text" name="s" id="ifvalue" width = "100%" placeholder="Input Value" /></th>'
+            +'<th width ="'+width+'" height = "'+height+'"><select class = "selectBox01" name="addcondition" id ="addcondition" width = "100%" style ="background:#F6F0ED;text-align: center;"><option value="equals">equals</option><option value="higher">higher</option><option value="lower">lower</option></select></th>'
+            +'</tr>'
+            +'</tbody>'
+            var elem = $('<table id = "RuleTable" cellpadding="5" cellspacing="2" height = "'+alertDiv.height()/2+'" width = "100%" class ="type09">').html(tableheader)
+            .prependTo(alertDiv);
+          </script>
+        </div>
+        <div id = "title">
+          <sj2> Semantic Speed Check</sj1>
+        </div>     
+        <div id = "div_panel">
+          <div id ="div_resourceupdate">
+            <div id = "panel_title">
+              <sj1>Resource Update (Latency)</sj1>
+            </div>
+            <div id = "panel_top"></div>
+            <div id = "panel_bottom"></div>
+          </div>
+          <div id ="div_rulematching">
+            <div id = "panel_title">
+              <sj1>Rule Matching (Latency)</sj1>              
+            </div>
+            <div id = "panel_top"></div>
+            <div id = "panel_bottom"></div>
+          </div>
+          <div id ="div_ruleupdate">
+            <div id = "panel_title">
+              <sj1>Rule Update (Latency)</sj1>                
+            </div>
+            <div id = "panel_top"></div>
+            <div id = "panel_bottom"></div>
+          </div>
+        </div>
+      </div>
+      <div id="sidebarr1">
+        <div id = "div_title"> <sj2>Rule List<sj2>
+        </div>
+        <div id = "div_sidebar" style="clear: both; overflow:auto;" >
+        </div>
+      </div>
+    </div>
+    </div>
+  </body>
+</html>

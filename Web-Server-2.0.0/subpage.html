@@ -1,0 +1,126 @@
+<!DOCTYPE>
+<html>
+  <head>
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>kwu-hub Monitoring Service</title>
+  <script src="//d3js.org/d3.v3.min.js"></script>
+  <script type="text/javascript" src="/socket.io-client/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+  <style type="text/css" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></style>
+
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src ="../client_modules/selectable.js"></script>
+    <style>
+    html, body {margin: 0; height: 100%; overflow: hidden}
+  </style>
+  </script>
+</head>
+<body>
+  <script>
+     var socket;
+    var host = '128.134.65.120';
+    function tscbnt(ip,tsc){
+      socket.emit('tsc',ip+";;"+tsc); 
+    }
+    function testSweet(tn){
+      $("#div_log").empty();
+      var tst = document.getElementById("select").value;
+      if(tst =="tst"){
+        alert("Select Test Profile");
+      }
+      else{
+        var date = new Date();
+        var y = date.getFullYear();
+        var mm = date.getMonth()+1;
+        var d = date.getDate();
+        var h = date.getHours();
+        var m = date.getMinutes();
+        var s = date.getSeconds();
+        var vmv = tn.split("_");
+        socket.emit('writelog',y+""+mm+""+d+""+h+""+m+""+s+"_"+vmv[2]+"_"+vmv[1]+"_LOG.txt;;"+document.getElementById("value").value+";;"+tst);
+        }
+    }
+    
+    window.onload = function() {
+      
+      socket = io.connect('http://' + host);
+      socket.emit('file', document.getElementById("value").value);
+      socket.on('filelist',function(data){
+        console.log(data);
+        printfilelist(data);
+      });
+      socket.on('filecontext',function(data){
+
+        printfilecontext(data);
+      });
+      socket.on('tscrsp',function(data){
+        printLog(data);
+      });
+      socket.on('rms',function(data){
+        resourcemonitor(data);
+      });
+      socket.on('tsp',function(data){
+         divAlert(data,'green');
+      });
+      socket.on('tse',function(data){
+         divAlert(data,'yellow');
+      });
+      socket.on('tsf',function(data){
+         divAlert(data,'red');
+      });
+      socket.on('rtrs',function(data){
+        printfilecontext(data);
+      })
+    };
+  </script>
+  <div id="menu-wrapper">
+    <div id="menu">
+      <ul>
+        <li ><a href="index.html">Main Page</a></li>
+        <li class="current_page_item"><a>oneM2M Test Page</a></li>
+        <li ><a href="semantic.html">Semantic Page</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="wrapper">
+    <div id="page">
+        <div id ="post">
+        <h1 class="title"><span style ="color:#000000">Test Log</span></h1>
+        <div id = "div_log" style="clear: both; overflow:auto;">
+          <div>
+            <script src="../client_modules/print_file_context.js"></script>
+          </div>
+        </div>
+      </div>
+      <div id ="sidebarr">
+        <h1 class="title"><span style ="color:#000000">Test Address</span></h1>
+        <div id="search">
+          <input type="text" name="s" id="value" value="128.134.65.120:7579/Mobius" /> 
+          <button id = "button" onclick ="testSweet(document.getElementById('select').value);">Run</button>
+        </div>
+        <h1 class="title"><span style ="color:#000000">Test Profile List</span></h1>
+        <div id ="div_list">
+          <table>
+            <select name="job" id ="select" style ="background:#F6F0ED;text-align: center;">
+              <option value="tst">Select Test Profile (CSE,AE,CNT,CIN)</option>
+              <option value="oneM2M_TEST_CD">oneM2M TEST [Create&Delete]</option>
+              <option value="oneM2M_TEST_CUD">oneM2M TEST [Create&Upate&Delete]</option>
+              <option value="oneM2M_TEST_CRD">oneM2M TEST [Create&Retreive&Delete]</option>
+            </select>
+          </table>
+        </div>
+        <h1 class="title"><span style ="color:#000000">Test Log File</span></h1>
+        <div id = "div_file" style="clear: both; overflow:auto; text-align:left">
+          <ul id="selectable" class ="ads" style="cursor:pointer"></ul>
+          <script src="../client_modules/print_file_list.js"></script>
+        </div>
+      </div>
+    </div>
+  </div>
+  </body>
+</html>

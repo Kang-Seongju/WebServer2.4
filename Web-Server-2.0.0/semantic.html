@@ -1,0 +1,199 @@
+<!DOCTYPE>
+<html>
+<head>
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>kwu-hub Monitoring Service</title>
+  <script src="//d3js.org/d3.v3.min.js"></script>
+  <script type="text/javascript" src="/socket.io-client/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="../client_modules/device_info.js"></script>
+  <link href="main_style.css" rel="stylesheet" type="text/css" media="screen" />
+  <style type="text/css" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></style>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <style>
+    html, body {margin: 0; height: 100%; overflow: hidden}
+  </style>
+</head>
+<body>
+  <script type="text/javascript">
+    var socket;
+    var flag = 1;
+    var host = "128.134.65.120";
+    var aeName = "kwu-hub";
+    function MakeRule(){
+        // call sparql query module
+      var device = document.getElementById("subject").value;
+      var service = document.getElementById("object").value;
+      var devicelist = device.split("$");
+      var servicelist = service.split("$");
+      var adddevice = document.getElementById("addsubject").value;
+      var addservice = document.getElementById("addobject").value;
+      var adddevicelist = adddevice.split("$");
+      var addservicelist = addservice.split("$");
+      var action_value = document.getElementById("actionvalue").value
+      var if_value = document.getElementById("ifvalue").value
+      var condition = document.getElementById("condition").value;
+      var addcondition = document.getElementById("addcondition").value;
+      if(device == "tst" || service == "tst" || adddevice == "tst" || addservice == "tst"){
+        alert("Select & Insert All Section");
+      }
+      else if (if_value == "Input Value" || action_value == "Input Value"){
+        alert("Insert Value");
+      }
+      else if(servicelist[1] == devicelist[1] && adddevicelist[1] == addservicelist[1]){
+        var str = "if this ["+adddevicelist[1]+"]'s ["+addservicelist[2]+"] is ["+if_value+"] than ["+addcondition+"] ,that ["+devicelist[1]+"]'s ["+servicelist[2]+"] turn to ["+action_value+"] ["+condition+"]";
+        console.log(str);
+        socket.emit('makerule',str);
+      }
+      else{
+        alert("Select related Section");
+      }
+    }
+    function Makelist(data){
+      $('#subject').empty();
+      $('#object').empty();
+      $('#addsubject').empty();
+      $('#addobject').empty();
+      $('#subject').append('<option value="tst">Select Device</option>');
+      $('#object').append('<option value="tst">Select Device</option>');
+      $('#addsubject').append('<option value="tst">Select Device</option>');
+      $('#addobject').append('<option value="tst">Select Device</option>');
+      $('#actionvalue').append('<option value="tst">Input Value</option>');
+      $('#ifvalue').append('<option value="tst">Input Value</option>');
+      
+        var list = data.split("&");
+        for (var i = 0 ; i < list.length - 1; i ++){
+          var llist = list[i].split("$");
+          var type = llist[0];
+          var subject = llist[1];
+          var object = llist[2];
+          var objectlist = object.split(",");
+          console.log(type);
+          $('#subject').append('<option value="$'+subject+'"">'+subject+'</option>');
+          $('#addsubject').append('<option value="add$'+subject+'"">'+subject+'</option>');
+          for(var j = 0 ; j < objectlist.length; j ++){
+            $('#object').append('<option value="$'+subject+'$'+objectlist[j]+'"">'+objectlist[j]+'</option>');
+            $('#addobject').append('<option value="add$'+subject+'$'+objectlist[j]+'"">'+objectlist[j]+'</option>');
+          }
+        }
+    }
+    window.onload = function() {
+      console.log("hi");
+      socket = io.connect('http://' + host);
+      socket.on('connect', function() {
+        console.log("hi2");
+        socket.emit('getSemantic_Resource','getData');
+      });
+      socket.on('getSemantic',function(data){
+        Makelist(data);
+      })
+      socket.on('getRule',function(data){
+        
+      })
+    }
+
+  </script>
+   <div id="menu-wrapper">
+    <div id="menu">
+      <ul>
+        <li><a href="./index.html">Main Page</a></li>
+        <li><a href="./subpage.html">oneM2M Test Page</a></li>
+        <li class="current_page_item"><a href="semantic.html">Semantic Page</a></li>
+      </ul>
+    </div>
+  </div>
+  <div id="wrapper">
+    <div id="page">
+      <div id="post">
+        <h1>Rule Maker</h1>
+        <div id = "div_log" style="clear: both; overflow:auto;">
+          <table id = "RuleTable" width = "100%" border ="2">
+            <tr>
+              <th> </th>
+              <th> 
+                Device
+              </th>
+              <th>
+                Service
+              </th>
+              <th>
+                Value
+              </th>
+               <th>
+                Condition
+              </th>
+              <th>
+                Button
+              </th>
+            </tr>
+              <th>Action</th>
+              <th> 
+                <select name="subject" id ="subject" width = "100%" style ="background:#F6F0ED;text-align: center;">
+                  <option value="tst">Select Device</option>
+                </select>
+              </th>
+              <th>
+                <select name="object" id ="object" width = "100%" style ="background:#F6F0ED;text-align: center;">
+                  <option value="tst">Select Service</option>
+                </select>
+              </th>
+              <th>
+                <input type="text" name="s" id="actionvalue" width = "100%" value="Input Value" /> 
+              </th>
+               <th>
+                <select name="condition" id ="condition" width = "100%" style ="background:#F6F0ED;text-align: center;">
+                  <option value="equals">equals</option>
+                  <option value="high">high</option>
+                  <option value="low">low</option>
+                </select>
+              </th>
+              <th>
+                <button id = "button" width = "100%" onclick ="MakeRule(document.getElementById('subject').value, document.getElementById('object').value, document.getElementById(value));">Make</button>
+              </th>
+            </tr>
+            <tr>
+              <th>IF</th>
+              <th> 
+                <select name="addsubject" id ="addsubject" width = "100%" style ="background:#F6F0ED;text-align: center;">
+                  <option value="tst">Select Device</option>
+                </select>
+              </th>
+              <th>
+                <select name="addobject" id ="addobject" width = "100%" style ="background:#F6F0ED;text-align: center;">
+                  <option value="tst">Select Service</option>
+                </select>
+              </th>
+              <th>
+                <input type="text" name="s" id="ifvalue" width = "100%" value="Input Value" /> 
+              </th>
+              <th>
+                <select name="addcondition" id ="addcondition" width = "100%" style ="background:#F6F0ED;text-align: center;">
+
+                  <option value="equals">equals</option>
+                  <option value="high">high</option>
+                  <option value="low">low</option>
+                </select>
+              </th>
+            </tr>
+        </table>
+        </div>    
+      </div>
+      <div id="sidebarr">
+        <h1>Rule List</h1>
+        <div id = "div_sidebar1" style="clear: both; overflow:auto;" >
+          <script src="../client_modules/status.js">
+            
+          </script>
+        </div>
+        <h1>Event Log</h1>
+        <div id = "div_sidebar2" class ="alertDiv" style="  overflow:auto; scroll-behavior: bottom">
+        </div>
+
+      </div>
+    </div>
+    </div>
+  </body>
+</html>

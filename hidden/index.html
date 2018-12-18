@@ -1,0 +1,322 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>oneM2M Tester Web Service</title>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="/socket.io-client/socket.io.js"></script>
+<script type="text/javascript" src="index.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/js/materialize.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/css/materialize.min.css" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+<style type="text/css" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js">
+#div_footer{
+width : 1015px;
+height : 280px;
+padding: 20px;
+margin-bottom:20px;
+float:bottom;
+border: 3px solid #D7D0C0;
+}
+#div_sidebar1 {
+width: 320px;
+height : 363px;
+padding: 20px;
+margin-bottom: 20px;
+float: left;
+border: 3px solid #D7D0C0;
+}
+#div_log{
+width: 1015px;
+height : 420px;
+padding: 20px;
+margin-bottom: 20px;
+float: left;
+border: 3px solid #D7D0C0;
+}
+#div_sidebar2 {
+width: 320px;
+height : 290px;
+padding: 20px;
+margin-bottom: 20px;
+float: left;
+border: 3px solid #D7D0C0;
+}
+#div_sidebar2 .alertDiv {
+	position: relative;
+	display: none;
+	cursor: pointer;
+	padding: 6px 4px 6px 4px;
+	margin: 4px 0 0 0;
+	text-align: center;
+	line-height: 1.6;
+	border: 1px solid #FFF;
+	box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+	-webkit-box-shadow: 3px 3px rgba(0, 0, 0, 0.1);
+	-moz-box-shadow: 3px 3px rgba(0, 0, 0, 0.1);
+	color: #a94442;
+	background-color: #f2dede;
+	border-color: #ff3334;
+}
+#div_sidebar2 .alertProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #ff3334;
+}
+
+/* 파란 알림 스타일 */
+
+#div_sidebar2 .alertDiv.blue {
+  color: #31708f;
+  background-color: #d9edf7;
+  border-color: #2BB0D7;
+}
+#div_sidebar2 .alertProgress.blue {
+  background-color: #2BB0D7;
+}
+
+/* 녹색 알림 스타일 */
+
+#div_sidebar2 .green {
+  color: #3c763d;
+  background-color: #dff0d8;
+  border-color: #468847;
+}
+#div_sidebar2 .alertProgress.green {
+  background-color: #468847;
+}
+
+/* 노란 알림 스타일 */
+
+#div_sidebar2 .alertDiv.yellow {
+  color: #8a6d3b;
+  background-color: #fcf8e3;
+  border-color: #FFAD33;
+}
+#div_sidebar2 .alertProgress.yellow {
+  background-color: #FFAD33;
+}
+#feedback { font-size: 1.4em; }
+#selectable .ui-selecting { background: #FECA40; }
+#selectable .ui-selected { background: #FECA40; color: white; }
+#selectable { list-style-type: none; margin: 0; padding: 0; width: auto; }
+#selectable li { margin: 3px; padding: 0.4em; font-style: bold; font-size: 1.2em; height: auto; }
+
+</style>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+  	$(function () {
+  		$('#div_sidebar2').append('<div id="alertDiv" />');
+	});
+  	$( function() {
+    	$( "#selectable" ).selectable();
+  	});
+  	$( function() {
+  	  $( "#accordion" ).accordion();
+  	});
+  </script>
+
+  </script>
+</head>
+<body>
+<script>
+            var socket;
+            var flag = 0 ;
+            function tscbnt(ip,tsc){
+              socket.emit('tsc',ip+";;"+tsc);
+            }
+            window.onload = function() {
+              socket = io.connect('http://128.134.65.120');
+
+              socket.emit('rm', document.getElementById("value").value);
+              socket.on('tscrsp',function(data){
+                printLog(data);
+              });
+              socket.on('rms',function(data){
+                resourcemonitor(data);
+              });
+              socket.on('tsp',function(data){
+              	divAlert(data,'green');
+                // resultprint(data);
+              });
+              socket.on('tse',function(data){
+              	divAlert(data,'blue');
+                // resultprint(data);
+              });
+              socket.on('tsf',function(data){
+              	divAlert(data,'red');
+                // resultprint(data);
+              });
+            };
+              
+          </script>
+<div id="menu-wrapper">
+	<div id="menu">
+		<ul>
+			<li class="current_page_item"><a href="main.html">Main Page</a></li>
+      		<li><a href="./index.html">oneM2M Test Page</a></li>
+		</ul>
+	</div>
+	<!-- end #menu -->
+</div>
+
+<div id="wrapper">
+	<!-- end #header -->
+	<div id="page">
+		<div id="page-bgtop">
+			<div id="page-bgbtm">
+				<div id="content">
+					<div class="post">
+						<h2 class="title"><a href="#">Resoucre Monitoring</a></h2>
+						<p class="meta"><span class="date">November 09, 2017</span><span class="posted">Posted by <a href="#">CCLAB</a></span></p>
+						<div class="entry" id = "div_log" style="clear: both; overflow:auto;">
+					            <table>
+					            <script type="text/javascript">
+				                  var graph = document.getElementById("div_log");
+				                  function resourcemonitor(data){
+				                    var line = document.createElement("p");
+				                      if(line.textContent)
+				                        line.textContent = data;
+				                      else{
+				                        line.innerText = data;
+				                        graph.appendChild(line);
+				                      } 
+				                      document.getElementById("div_log").scrollTop = document.getElementById("div_log").scrollHeight;
+				                  }
+				              	</script>
+					            </table>
+						</div>
+					</div>
+					<div class ="bottom">
+						<h2 class="title"><a href="#">oneM2M Tester Log</a></h2>
+						<p class="meta"><span class="date">  </span></p>
+						<div class="entry" id = "div_footer" style="clear: both; overflow:auto;">
+						<h2<a href="#"> </a></h2>
+						<div>
+						    <ul id = "list" class="collapsible" data-collapsible="accordion" style="cursor:pointer">  
+						    </ul>
+					            <script type="text/javascript" >
+					              var logWindow = document.getElementById('accordion');
+					              function printLog(msg) {
+					              	console.log(msg);
+					              	var rspmsg = msg.split(";;");
+					              	var list = rspmsg[1].split("<");
+					              	var str ="";
+					              	for(var t in list){
+					              		if (t!=0){
+					              			str+="< "+list[t];
+					              		}
+					              	}
+					              	if(rspmsg[0]=="oneM2M_TCS_CIN_RET"){
+					              	$("#list").append("<li><div class=\"collapsible-header\"><i class=\"mdi-navigation-chevron-right\"></i>"+rspmsg[0]+"</div><div class=\"collapsible-body\"><p>"+rspmsg[1]+"</p></div></li>");
+					              	}else{
+					              	$("#list").append("<li><div class=\"collapsible-header\"><i class=\"mdi-navigation-chevron-right\"></i>"+rspmsg[0]+"</div><div class=\"collapsible-body\"><p>"+str+"</p></div></li>");
+					              	}
+					              
+					              document.getElementById("div_footer").scrollTop = document.getElementById("div_footer").scrollHeight;
+					              }
+					            </script>
+						</div>
+						</div>
+					</div>
+					<div style="clear: both;">&nbsp;</div>
+				</div>
+				<div id="sidebarr">
+					<ul>
+						<li>
+							<h2>CSE Address :</h2>
+							<div id="search" >
+								<form method="get" action="#">
+									<div>
+										<input type="text" name="s" id="value" value="128.134.65.120:7579/Mobius" />
+									</div>
+								</form>
+							</div>
+						
+						</li>
+						<h2>oneM2M Test Case</h2>
+						<div id = "div_sidebar1" style="clear: both; overflow:auto;" >
+						<li>
+							<ol id="selectable" style="cursor:pointer">
+				              <li><a id="oneM2M_TCS_AE_CRE">oneM2M_TCS_AE_CRE</a></li>
+				              <li><a id="oneM2M_TCS_AE_DEL">oneM2M_TCS_AE_DEL</a></li>
+				              <li><a id="oneM2M_TCS_CNT_CRE">oneM2M_TCS_CNT_CRE</a></li>
+				              <li><a id="oneM2M_TCS_CNT_DEL">oneM2M_TCS_CNT_DEL</a></li>
+				              <li><a id="oneM2M_TCS_CIN_CRE">oneM2M_TCS_CIN_CRE</a></li>
+				              <li><a id="oneM2M_TCS_CIN_RET">oneM2M_TCS_CIN_RET</a></li>
+				              <li><a id="oneM2M_TCS_ALL_DEL">oneM2M_TCS_ALL_DEL</a></li>
+							</ol>
+							<script type="text/javascript">
+				                var tsc = document.getElementById("selectable");
+				                tsc.addEventListener("click",function(e) {
+					                if(e.target.id != "selectable" && e.target.id != "" ){
+					                   // logWindow.append(document.createTextNode(e.target.id));
+					                   tscbnt(document.getElementById("value").value,e.target.id);
+					                }
+				                });
+				             </script>
+						</li>
+						</div>
+						<li>
+							<h2>oneM2M Test Result</h2>
+							<div id = "div_sidebar2" class ="alertDiv" style="  overflow:auto; scroll-behavior: bottom">
+					        <script type="text/javascript">
+								function divAlert(msg, type, dur, isHtml) {
+								  var alertDiv = $('#div_sidebar2');
+								  if (!isHtml) {
+								    msg = escapeHtml(msg);
+								    msg = msg.replace(/\n/g, '<br />');
+								  }
+								  //기본 색상 = red
+								  var elem = $('<div class="alertDiv ' + (type || 'white') + '" />').html("<h6><span style =\"color : #ffffff\">"+msg + '</span></h6><div class="alertProgress ' + (type || 'white') + '" />').prependTo(alertDiv);
+								  elem.on('click', function () {
+								    $(this).remove();
+								  });
+
+								  elem.slideDown(100, function () {
+								    $(this).find(".alertProgress").animate({
+								      'width': 0
+								    }, (dur || 60000), 'linear', function () {
+								      elem.slideUp(100, function () {
+								        $(this).remove();
+								      });
+								    });
+								  });
+								}
+
+								function escapeHtml(raw) {
+								  var regex = /[&<>"'` !@$%()=+{}[\]]/g;
+								  return raw.replace(regex, function onReplace(match) {
+								    return '&#' + match.charCodeAt(0) + ';';
+								  });
+								}
+					            // var resultwindow = document.getElementById("div_sidebar2");
+					            // function resultprint(msg){
+					            //     resultwindow.appendChild(document.createTextNode(msg));
+					            //     document.getElementById("div_sidebar2").scrollTop = document.getElementById("div_sidebar2").scrollHeight;
+					            // }
+					        </script>
+          					</div>
+						</li>
+					</ul>
+				</div>
+				<!-- end #sidebar -->
+				<div style="clear: both;">&nbsp;</div>
+			</div>
+		</div>
+	</div>s
+	<!-- end #page -->
+</div>
+<div id="footer">
+	<p>&copy; Kwang Woon Univ. | <a href="http://fotogrph.com/">Computer Communication LAB.</a></p>
+</div>
+<!-- end #footer -->
+</body>
+</html>
