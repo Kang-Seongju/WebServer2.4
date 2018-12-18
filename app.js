@@ -19,8 +19,8 @@ var app = express();
 var time = require("date-utils");
 var mqtt = require('mqtt');
 var mqttport = "1883"
-var host = "128.134.65.120";
-var aeName = "kwu-hub";
+var host = "128.134.65.120"; // your Mobius IP
+var aeName = "kwu-hub"; // your Middleware Name (aeName)
 var TaeName= "oneM2M_AE_TEST";
 var gSocket;
      console.log("connect");
@@ -29,7 +29,7 @@ var httpServer = http.createServer(app).listen({port:80, agent: false}, function
 });
 
 /* GW for Testing platform start */
-var testHost = "223.194.33.61";
+// var testHost = "223.194.33.61";
 
 function replaceAll(str, searchStr, replaceStr) {
   return str.split(searchStr).join(replaceStr);
